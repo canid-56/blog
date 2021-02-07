@@ -1,5 +1,5 @@
 ---
 short_name: info
-name: Information
+name: お知らせ
 ---
-Information about me.
+ブログや私自信についてのお知らせ
