@@ -1,4 +1,7 @@
-plubins:
+url: "https://canid-56.github.io"
+baseurl: "/blog"
+
+plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
