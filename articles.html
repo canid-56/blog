@@ -9,7 +9,7 @@ title: canid56 - Blog
         <li>
             <h2><a href="{{ post.url | relative_url}}">{{ post.title }}</a></h2>
             <p>{{ post.date | date_to_string }}</p>
-            {{ post.excerpt }}
+            {{ post.excerpt | strip_html}}
         </li>
     {% endfor %}
 </ul>
