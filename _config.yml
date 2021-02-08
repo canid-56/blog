@@ -6,6 +6,8 @@ plugins:
   - jekyll-sitemap
   - jekyll-seo-tag
 
+highlighter: rouge
+
 collections:
   topics:
     output: true
