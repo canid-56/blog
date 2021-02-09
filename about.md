@@ -10,7 +10,7 @@ title: canid-56 - About
 - ハンドルネーム / Handle name   
     canid-56  
 - 出生 / Date of birth  
-    1998年9月 / September, 1988  
+    1988年9月 / September, 1988  
 - 居住地 / Place of residence  
     東京都 / Tokyo, Japan
 
@@ -63,3 +63,11 @@ title: canid-56 - About
 - パイオニア株式会社 / Pioneer Co., Ltd.  
     2013年4月から2017年5月 / April, 2013 to May, 2017  
     + 研究者 / Researcher  
+
+<!-- ## Achievements -->
+
+<!-- ### Publish -->
+
+<!-- ### Presentation -->
+
+<!-- ### Prise -->
