@@ -1,0 +1,378 @@
+---
+title: 傾向スコアを使った因果推論の分析例
+output: 
+  html_document: 
+    df_print: kable
+layout: post
+topic: analysis
+---
+
+授業のレポートで因果推論による効果測定を行ったものをほぼそのまま投稿.  
+Rmarkdownをjekyllで投稿する機能のテストを兼ねて.  
+データを `./data/` の中に入れればそのまま実行可能のはず.  
+
+* 
+{:toc}
+
+```{r setup, include=TRUE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE, warning=FALSE, message=FALSE)
+library(tidyverse)
+library(skimr)
+library(magrittr)
+library(pROC)
+library(modelsummary)
+```
+
+# 概要
+
+
+データ  
+
+> Bank Marketing Data Set  
+[Moro et al., 2014] S. Moro, P. Cortez and P. Rita. A Data-Driven Approach to Predict the Success of Bank Telemarketing. Decision Support Systems, Elsevier, 62:22-31, June 2014  
+http://archive.ics.uci.edu/ml/datasets/Bank+Marketing  
+
+仮説
+
+> 銀行の電話営業による定期預金の成約確率は, 接触方法が固定電話か携帯電話かによって異なる.
+
+分析方法
+
+> 傾向スコアを利用した因果推論
+
+結果
+
+> 1%の有意水準で携帯電話での接触の方が成約確率が高く, オッズ比は2.46と推定された.
+
+# データ理解
+
+```{r load}
+dat <- read_delim("./data/bank-additional/bank-additional-full.csv",delim = ";", quote = '"')
+dat %>% skim()
+dat %>% head()
+```
+
+```{r type change}
+dat <- dat %>% 
+    mutate_at(vars(job,marital,education,default,housing,loan,month,day_of_week,poutcome), 
+              funs(as.factor)) %>% 
+    mutate(contact = (contact == "cellular") %>% as.integer(),
+           y = (y == "yes") %>% as.integer())
+```
+
+使用するデータは [Moro et al., 2014] によって 2008年5月から2013年6月までにポルトガルの銀行から収集された, 合計52,944件の電話営業による定期預金契約の成約結果のデータである. 
+
+## 変数の理解
+
+データには, 以下の変数が存在する.  
+今回の分析では目的変数は `y` , 介入変数は `contact` , その他の変数のうち `duration` を除いたものを交絡変数とする.  
+
+1. age : 年齢
+2. job : 職業   
+    "admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed","unknown"
+3. marital : 結婚状況   
+    "divorced","married","single","unknown"
+        note: "divorced" means divorced or widowed
+4. education : 最終学歴 
+    "basic.4y","basic.6y","basic.9y","high.school","illiterate","professional.course","university.degree","unknown"
+5. default : 債務不履行か   
+    "no","yes","unknown"
+6. housing : 住宅ローンありか   
+    "no","yes","unknown"
+7. loan : 個人ローンありか  
+    "no","yes","unknown"
+8. contact : 接触のコミュニケーション方法   
+    "cellular","telephone"
+9. month : 当年の直近の接触月   
+    "jan", "feb", "mar", ..., "nov", "dec"
+10. day_of_week : 当週の直近の接触曜日  
+    "mon","tue","wed","thu","fri"
+11. duration : 直近の接触時間(秒)   
+    電話営業の会話時間は成約結果に依存するため, モデルに含めてはいけない
+12. campaign : 当顧客への当キャンペーン中の接触回数
+13. pdays : 前回のキャンペーンでの当顧客への直近の接触からの日数
+14. previous : 当顧客への当キャンペーン以前の接触回数
+15. poutcome : 前回のマーケティングキャンペーンの結果   
+    "failure","nonexistent","success"
+16. emp.var.rate : 四半期 Employment variation rate
+17. cons.price.idx : 月間消費者物価指数
+18. cons.conf.idx : 月間消費者信頼感指数
+19. euribor3m : 日別3ヶ月ユーリボー指標金利
+20. nr.employed : 四半期被雇用者数
+21. y : 定期預金の有無
+
+## 生データの確認
+
+データセットからランダムに10レコードを抽出し, 以下に表示する. 
+
+```{r raw data}
+sample_10 <- dat %>% 
+    sample_n(10)
+sample_10 %>% dplyr::select(1:10)
+sample_10 %>% dplyr::select(11:20)
+sample_10 %>% dplyr::select(21)
+```
+
+## 分布と相関の確認
+
+データの全容を把握するため, 各変数の分布と目的変数との相関を確認する. 
+
+### 分布の確認
+
+それぞれのカテゴリカル変数について, カテゴリ毎のレコード数を表示する.  
+特に留意すべき点として, まず介入変数とする `contact` は値が `cellular` である時に1とするように変数変換を行なっており, またデータの偏り桁が同程度のため大きくない. 目的変数 `y` は値が `yes` ある時に1とするように変数変換を行なっており, またデータの偏りは桁が異なるため大きいと判断される. 
+
+```{r dist categories}
+dist_cat <- function(x, col){
+    col <- substitute(col)
+    out<- x %>% 
+        group_by(!!col) %>% 
+        summarise(N=n(), .groups="drop")
+    return(out)
+}
+dat %>% dist_cat(job)
+dat %>% dist_cat(marital)
+dat %>% dist_cat(education)
+dat %>% dist_cat(default)
+dat %>% dist_cat(housing)
+dat %>% dist_cat(loan)
+dat %>% dist_cat(contact)
+dat %>% dist_cat(month)
+dat %>% dist_cat(day_of_week)
+dat %>% dist_cat(poutcome)
+dat %>% dist_cat(y)
+```
+
+続いて量的変数についてヒストグラムを描画する.  
+`pdays` 以外はどの変数についても極端な外れ値は存在しない.  `pdays` については0付近か1000付近の2つのピークを取るようであり, これは分析対象のキャンペーンからその前のキャンペーンまでは接触を行っていないことに起因すると思われる.  
+
+```{r dist numerics}
+n_bin <- dat %>%
+    summarise(n_bin=log(n(),2)+1) %>% 
+    as.numeric()
+hist_num <- function(x, col){
+    col <- substitute(col)
+    out <- x %>% 
+    ggplot(aes(x=!!col)) +
+    geom_histogram(bins=n_bin)
+    return(out)
+}
+dat %>% hist_num(age)
+dat %>% hist_num(duration)
+dat %>% hist_num(campaign)
+dat %>% hist_num(pdays)
+dat %>% hist_num(previous)
+dat %>% hist_num(emp.var.rate)
+dat %>% hist_num(cons.price.idx)
+dat %>% hist_num(cons.conf.idx)
+dat %>% hist_num(euribor3m)
+dat %>% hist_num(nr.employed)
+```
+
+### 目的変数に対する相関の確認
+
+それぞれのカテゴリカル変数について, カテゴリ毎の成約回数とレコード数, それらを除算した成約率をそれぞれ示す.  
+介入変数とする `contact` の他にも `job` や `education` , `month` , `poutcome` などはカテゴリ毎の成約率にばらつきがあるため, 有用な交絡変数になると思われる.  
+
+
+```{r y vs job}
+success_rate <- function(x, col){
+    col <- substitute(col)
+    out <- x %>% 
+        group_by(!!col) %>% 
+        summarise(n_success=sum(y == 1),
+              n_count=n(),
+              r_success=n_success/n_count,
+              .groups="drop")
+    return(out)
+}
+dat %>% success_rate(job)
+dat %>% success_rate(marital)
+dat %>% success_rate(education)
+dat %>% success_rate(default)
+dat %>% success_rate(housing)
+dat %>% success_rate(loan)
+dat %>% success_rate(contact)
+dat %>% success_rate(month)
+dat %>% success_rate(day_of_week)
+dat %>% success_rate(poutcome)
+```
+
+続いて, それぞれの量的変数について目的変数 `y` に対する相関係数を表示する.  
+`pdays` や `previous` などの前回キャンペーンの結果や, `euribor3m` や `nr.employed` などの景気動向との相が特に高いことが見て取れる.  
+より詳しい情報として, それぞれの量的変数について目的変数 `y` の値別の箱ひげ図を付録に示す. 
+
+```{r y vs numerics}
+success_cor <- function(x, col){
+    col <- substitute(col)
+    tmp <- x %>% 
+        mutate(y_01 = (y == 1) %>% as.integer(), .before=1) %>% 
+        dplyr::select(y_01, !!col)
+    out <- cor(tmp)
+    return(out[1,2])
+}
+
+success_scat <- function(x, col){
+    col <- substitute(col)
+    out <- x %>% 
+        mutate(y_01 = (y == 1) %>% as.integer(), .before=1) %>% 
+        ggplot(aes(x=!!col, y=y_01)) +
+        geom_point() + 
+        ylab("y")
+    return(out)
+}
+success_box <- function(x, col){
+    col <- substitute(col)
+    out <- x %>% 
+        mutate(y_01 = (y == 1) %>% as.integer(), .before=1) %>% 
+        ggplot(aes(y=!!col, x=y_01 %>% as.factor())) +
+        geom_boxplot() + 
+        xlab("y")
+    return(out)
+}
+
+dat %>% 
+    dplyr::select(y,age, duration, campaign, pdays, previous, emp.var.rate,cons.price.idx,cons.conf.idx,euribor3m,nr.employed) %>% 
+    cor() %>% 
+    data.frame() %>% 
+    mutate(variable=rownames(.)) %>% 
+    dplyr::select(variable,y) 
+```
+
+
+# 分析
+
+## 問題設定
+
+`contact` は `cellular` と `telephon` の2種類があり, その選択によって定期預金の成約率が変わる可能性がある. そこで, 因果推論に基づいて `contact` による成約率向上の効果の有無を検証する.
+
+分析は以下の3つのロジスティック回帰モデルによって `contact` の `y` に対する回帰係数を求め, 有意性や効果量を評価する.  
+
+$$
+\begin{eqnarray*}
+Model\ M1 :\\
+logit(p_i) &=& \beta_0 + \beta_1 contact_i \\
+Model\ M2 :\\
+logit(p_i) &=& \beta_0 + \beta_1 contact_i + \sum_k\beta_k X_{ik} \\
+Model\ M3 :\\
+logit(p_i) &=& \beta_0 + \beta_1 contact_i + \beta_2 P(X_i) \\
+logit\left(P(X_i)\right) &=& \gamma_0 + \sum_k\gamma_k X_{ik}\\
+\end{eqnarray*}
+$$
+
+ここで, $i$は観測対象, $p_i$は観測対象$i$の成約格率, $\beta_0$と$\gamma_0$は定数, $\beta_1$は$contact$の$y$に対する効果量, $concact_i$は$i$番目の観測対象に対して携帯電話への接触を行った場合に1となる変数, $\beta_k$は$k$番目の交絡変数の$y$に対する回帰係数, $X_{ik}$は$k$番目の交絡変数, $P(X_i)$は$i$番目の観測対象へ境内電話への接触を行う確率(傾向スコア), $\gamma_k$は$k$番目の交絡変数の$P(X_i)$に対する回帰係数である.  
+交絡変数は, $y$と$contact$と$duration$を除く全ての変数とする. 
+
+## 分析結果
+
+まず, 傾向スコアの推定を行った結果を示す.  
+回帰係数の推定結果は付録とし, `contact` の値別の傾向スコア推定値のヒストグラムとROC曲線を以下に示す. 
+
+```{r pscore}
+model_pscore <- glm(contact ~ age + job + marital + education + default + housing + loan + month + day_of_week + campaign + pdays + previous + poutcome,
+                    family = binomial("logit"), data=dat)
+# list("Model pscore"=model_pscore) %>% msummary(stars=TRUE)
+
+ps <- model_pscore$fitted.values %>% 
+    as_tibble() %>% 
+    rename(pscore=value) %>% 
+    mutate(idx=rownames(.), .before=1)
+dat2 <- dat %>% 
+    mutate(idx=rownames(.), .before=1) %>% 
+    left_join(ps, by="idx")
+dat2 %>%
+    ggplot(aes(x=pscore, fill=contact %>% as.factor())) +
+    geom_histogram(position="identity", alpha=0.8) +
+    labs(fill="contact")
+# dat2 %>% 
+#     ggplot(aes(x=pscore, y=contact)) + 
+#     geom_point()
+
+ROC1 = roc(contact ~ pscore, data=dat2, ci=TRUE)
+# ROC1$auc %>% format(digits=3)
+# plot(ROC1, legacy.axes=TRUE)
+ROC1_res <- ROC1$sensitivities %>% 
+    bind_cols(ROC1$specificities) %>% 
+    rename(specificities=`...1`, sensitivities=`...2`)
+ROC1_res %>% 
+    ggplot(aes(x=1-specificities, y=sensitivities)) +
+    geom_line() +
+    geom_abline(intercept = 0, slope = 1, size=0.1) +
+    coord_fixed() + 
+    xlim(0,1) + ylim(0,1) + 
+    annotate("text",label=paste("AUC :",ROC1$auc %>% format(digits=3)),
+             x=0.75, y=0.25)
+```
+
+ヒストグラムより, 傾向スコアの大半の領域にて `contact` 変数のいずれの値も存在するため, 傾向スコアとして適度な分類がなされていると判断できる.  
+また, ROC曲線より, c統計量(AUC)は0.88と十分な識別能力を持っていることが確認できる. 
+
+続いて, 上記推定された傾向スコアを利用して, Model M1からM3の3つのモデルによって `contact` の効果を推定した結果を示す. 尚, 交絡因子の回帰係数の推定結果については付録にて示す. 
+
+```{r effect measurement}
+model_sreg <- glm(y ~ contact,
+                  family = binomial("logit"), data=dat2)
+model_mreg <- glm(y ~ contact + age + job + marital + education + default + housing + loan + month + day_of_week + campaign + pdays + previous + poutcome,
+                    family = binomial("logit"), data=dat2)
+model_preg <- glm(y ~ contact + pscore, family = binomial("logit"), data=dat2)
+
+
+list(
+    "model M1"=model_sreg,
+    "model M2"=model_mreg,
+    "model M3"=model_preg
+) %>% msummary(stars=TRUE,
+               coef_omit="age|job|marital|education|default|housing|loan|month|day|campaign|pdays|previous|poutcome")
+
+# model_preg$coefficients[2] %>% exp() # オッズ比
+```
+
+## 考察
+
+いずれのモデルについても, `contact` の `y` に対する効果は1%の有意水準で存在すると示された.  
+
+model M1 は単回帰であり, 交絡因子の不在によるバイアスが存在するため, 効果が過剰に見積もられている.  
+model M2 と model M3 はどちらもモデル全体で使用する変数は共通しているにも関わらず, 効果量の推定値は標準誤差に比べて M2 の方がやや大きい. これについての解釈は複数考えられるが, 例えば M2 では目的変数の対数オッズに対する交絡変数の関係が線形であると仮定しているが, 例えば `age` などの数値が目的変数に非線形な影響を与えるなどの現象がモデル化されていないことによるバイアスが存在する可能性などが考えられる. 
+
+# 結論
+
+上記の考察により最も妥当であると思われる model M3 について, `contact` のオッズ比を求めると`r model_preg$coefficients[2] %>% exp() %>% format(digits=3)`となる. すなわち, 電話営業の手段を携帯電話への連絡とすることで, 成約率が2倍になると見積もられた. 
+
+ただし中止なければいけないのは, 今回のデータには真の意味での非介入群のデータ, すなわち電話営業を行っていない顧客のデータがないため, そもそも電話営業を行うかどうかによる選択バイアスは考慮できていない. また, 得られたデータに交絡要因が全て入っている訳ではなく, 例えば口座の残高など効果に影響しそうな要因は他にも考えられるためバイアスを全て除去できているとは限らない. 
+
+# 付録
+
+## 箱ひげ図
+
+```{r box}
+# # 重いから最後だけ実行 ----
+dat %>% success_box(age)
+dat %>% success_box(duration)
+dat %>% success_box(campaign)
+dat %>% success_box(pdays)
+dat %>% success_box(previous)
+dat %>% success_box(emp.var.rate)
+dat %>% success_box(cons.price.idx)
+dat %>% success_box(cons.conf.idx)
+dat %>% success_box(euribor3m)
+dat %>% success_box(nr.employed)
+```
+
+## 傾向スコアの回帰係数
+
+```{r pscore est}
+list("Model pscore"=model_pscore) %>% msummary(stars=TRUE)
+```
+
+## 交絡因子を含めたyの回帰係数
+
+```{r est all}
+list(
+    "model M1"=model_sreg,
+    "model M2"=model_mreg,
+    "model M3"=model_preg
+) %>% msummary(stars=TRUE)
+```
+
+----
+以上
