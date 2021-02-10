@@ -4,7 +4,8 @@ local({
     a = commandArgs(TRUE)
     
     knitr::opts_chunk$set(
-        fig.path = sprintf('figure/%s/', digest::digest(a[1]))
+        # fig.path = sprintf('figure/tmp/%s/', digest::digest(a[1]))
+        fig.path = sprintf('figure/%s/', gsub("\\..+$","",basename(a[1])))
     )
     
     knitr::opts_knit$set(
