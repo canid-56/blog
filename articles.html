@@ -1,10 +1,34 @@
 ---
 layout: default
-title: canid56 - Blog
+title: canid56 - Articles
 ---
-<h1>Latest Posts</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <h1>Articles</h1>
+        </div>
+    </div>
+    <div class="row w-100">
+        <div class="col">
+        {% for post in site.posts %}
+            <div class="row">
+                <div class="col col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ post.title }}</h5>
+                            <p class="small">{{ post.date | date_to_string }}</p>
+                            <p class="card-text">{{ post.excerpt | strip_html}}</p>
+                            <a href="{{ post.url | relative_url}}" class="btn btn-dark stretched-link">読む</a>
+                        </div>    
+                    </div>    
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
 
-<ul>
+<!-- <ul>
     {% for post in site.posts %}
         <li>
             <h2><a href="{{ post.url | relative_url}}">{{ post.title }}</a></h2>
@@ -12,4 +36,4 @@ title: canid56 - Blog
             {{ post.excerpt | strip_html}}
         </li>
     {% endfor %}
-</ul>
+</ul> -->
