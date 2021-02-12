@@ -25,10 +25,10 @@ title: canid-56 - Home
             <div class="card h-100" >
                 <div class="card-body">
                 <!-- <a href="{{ post.url | relative_url}}" class="card-body"> -->
-                    <h5 class="card-title text-truncate"><a href="{{ post.url | relative_url}}">{{ post.title }}</a></h5>
+                    <h5 class="card-title text-truncate">{{ post.title }}</h5>
                     <p class="small">{{ post.date | date_to_string }}</p>
                     <p class="card-text text-truncate">{{ post.excerpt | strip_html}}</p>
-                    <a href="{{ post.url | relative_url}}" class="btn btn-dark">読む</a>
+                    <a href="{{ post.url | relative_url}}" class="btn btn-dark stretched-link">読む</a>
                 </div>
                 <!-- </a> -->
             </div>
