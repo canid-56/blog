@@ -1,9 +1,7 @@
 ---
-layout: default
+layout: post
 title: canid-56 - About
 ---
-
-# About
 
 ## Profile
 

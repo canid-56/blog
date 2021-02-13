@@ -5,6 +5,68 @@
     opacity: 0.8;
     color: white;
   }
+.post {
+  h1 {
+    margin: 0;
+    border-bottom: solid 2px;
+    border-left: solid 2px;
+    padding-bottom: 0.25rem;
+    padding-left: 0.25rem;
+    margin-bottom: 1rem;
+  }
+  h2 {
+    margin: 0;
+    border-bottom: solid 1px;
+    border-left: solid 1px;
+    padding-bottom: 0.25rem;
+    padding-left: 0.25rem;
+    margin-bottom: 1rem;
+  }
+  h3 {
+    display: flex;
+    align-items: center;
+    padding-left: 0.25rem;
+    border-left: solid 1px;
+    padding-right: 0.25rem;
+  }
+  h3:after {
+    content: '';
+    border-top: solid 1px;
+    border-left: solid 1px;
+    flex-grow: 1;
+    margin-left: 1rem;
+  }
+  h4 {
+    display: flex;
+    border-left: solid 1px;
+    padding-left: 0.25rem;
+    align-items: center;
+    padding-right: 0.25rem;
+  }
+  h4:after {
+    content: '';
+    border-top: dashed 1px;
+    flex-grow: 1;
+    margin-left: 1rem;
+  }
+  h5 {
+    display: flex;
+    align-items: center;
+    border-left: solid 1px;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+  h6 {
+    display: flex;
+    align-items: center;
+    padding-left: 0.25rem;
+    border-left: dashed 1px;
+    padding-right: 0.25rem;
+  }
+  p {
+    text-indent: 1rem;
+  }
+}
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #444;

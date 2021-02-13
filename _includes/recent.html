@@ -1,0 +1,21 @@
+<div class="row">
+    <div class="col">
+        <h2>新着記事</h2>
+    </div>
+</div>
+<div class="row">
+    {% for post in site.posts limit:3 %}
+    <div class="col-sm-4">
+        <div class="card h-100 shadow" >
+            <div class="card-body">
+                <h5 class="card-title text-truncate text-primary">{{ post.title }}</h5>
+                <p class="small">{{ post.date | date_to_string }}</p>
+                <p class="card-text text-truncate">{{ post.excerpt | strip_html}}</p>
+                <a href="{{ post.url | relative_url}}" class="btn btn-dark stretched-link shadow">読む</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% assign articles_links = site.data.navi | where: "name", "Articles" %}
+<a role="button" class="btn btn-link" href="{{ articles_links.first.link |relative_url }}">記事一覧</a>

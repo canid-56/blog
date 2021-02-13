@@ -13,12 +13,12 @@ title: canid56 - Articles
         {% for post in site.posts %}
             <div class="row">
                 <div class="col col-sm-12">
-                    <div class="card">
+                    <div class="card my-2 shadow">
                         <div class="card-body">
                             <h5 class="card-title text-primary">{{ post.title }}</h5>
                             <p class="small">{{ post.date | date_to_string }}</p>
                             <p class="card-text">{{ post.excerpt | strip_html}}</p>
-                            <a href="{{ post.url | relative_url}}" class="btn btn-dark stretched-link">読む</a>
+                            <a href="{{ post.url | relative_url}}" class="btn btn-dark stretched-link shadow">読む</a>
                         </div>    
                     </div>    
                 </div>
