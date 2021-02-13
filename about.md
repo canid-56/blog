@@ -3,7 +3,7 @@ layout: post
 title: canid-56 - About
 ---
 
-## Profile
+# Profile
 
 - ハンドルネーム / Handle name   
     canid-56  
@@ -12,15 +12,15 @@ title: canid-56 - About
 - 居住地 / Place of residence  
     東京都 / Tokyo, Japan
 
-## Skills
+# Skills
 
-### Business
+## Business
 
 - プレゼンテーション / Presentation  
 - コンサルテーション / Consultation  
 - プロジェクト管理 / Project Management  
 
-### Science
+## Science
 
 - 多変量解析 / Multivariate Analysis  
 - 時系列解析 / Timeseries Analysis  
@@ -31,16 +31,16 @@ title: canid-56 - About
 - 素粒子物理 / Particle Physics  
 - 超伝導 / Superconductivity  
 
-### Engineering
+## Engineering
 
 - R  
 - Python  
 - Tableau  
 - MySQL  
 
-## History
+# History
 
-### Academic Background
+## Academic Background
 
 - 修士 (経営学) 取得見込 / Master of Business Addministration (expected)   
     2022年3月 / March, 2022  
@@ -52,7 +52,7 @@ title: canid-56 - About
     2011年3月 / March, 2011  
     筑波大学 / University of Tsukuba  
 
-### Work Experience
+## Work Experience
 
 - 株式会社セラク / SERAKU Co., Ltd.  
     2017年6月から2021年2月 / June, 2017 to February, 2021
@@ -62,10 +62,10 @@ title: canid-56 - About
     2013年4月から2017年5月 / April, 2013 to May, 2017  
     + 研究者 / Researcher  
 
-<!-- ## Achievements -->
+<!-- # Achievements -->
 
-<!-- ### Publish -->
+<!-- ## Publish -->
 
-<!-- ### Presentation -->
+<!-- ## Presentation -->
 
-<!-- ### Prise -->
+<!-- ## Prise -->
