@@ -15,19 +15,20 @@ layout: default
 
 <div class="container-fluid">
   <div class="row">
-    <div class="col-sm-3 d-none d-sm-block"> 
-      <div class="card shadow position-fixed" style="width: 16rem;">
-        <div class="card-body">
-            <h5 class="card-title text-truncate text-primary">{{ page.title }}</h5>
-            <p class="small">{{ page.date | date_to_string }}</p>
-            <p>{% include toc.html html=content h_max=2 class="toc list-unstyled" item_class="" submenu_class="mb-2" %}</p>
-            <!-- <p>あああああああああああああああああああああああああああああああああああああああああああああああああああああ</p> -->
-        </div>
-      </div>
+    <div class="col-sm-3 d-none d-sm-block">
+        <div class="card shadow sticky-top" style="top: 4.5em;">
+          <div class="card-body">
+              <h5 class="card-title text-overflow text-primary">{{ page.title }}<br>- 目次 -</h5>
+              <p class="small">{{ page.date | date_to_string }}</p>
+              <p>{% include toc.html html=content h_max=2 class="toc list-unstyled" item_class="text-overflow" submenu_class="mb-2" %}</p>
+              <!-- <p>あああああああああああああああああああああああああああああああああああああああああああああああああああああ</p> -->
+          </div>
+      </div> 
+      
     </div>
-    <div class="col-sm shadow py-3 w-75">
+    <div class="col-sm-9 shadow py-3">
       <div class="jumbotron bg-dark text-light">
-        <div class="container">
+        <div class="container-sm">
             <h1>{{ page.title }}</h1>
             <p>
                 {{ page.date | date_to_string }}
@@ -38,7 +39,7 @@ layout: default
             </p>            
         </div>    
       </div>
-      <div class="post">
+      <div class="container-sm post">
         {{ content }}
       </div>    
     </div>
