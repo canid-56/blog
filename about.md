@@ -37,6 +37,9 @@ title: canid-56 - About
 - Python  
 - Tableau  
 - MySQL  
+- HTML  
+- CSS  
+- Bootstrap  
 
 # History
 
